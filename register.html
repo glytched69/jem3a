@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      background-color: #f0f0f0;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+  }
+  
+  .container_reg {
+      background-color: #fff;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      width: 400px;
+      text-align: center;
+  }
+  
+  .logo {
+      margin-bottom: 20px;
+  }
+  
+  .register-box h2 {
+      margin-bottom: 20px;
+      color: #333;
+  }
+  
+  .register-box .login-link {
+      margin-bottom: 20px;
+      color: #666;
+  }
+  
+  .register-box .login-link a {
+      color: #007bff;
+      text-decoration: none;
+  }
+  
+  .register-box .login-link a:hover {
+      text-decoration: underline;
+  }
+  
+  .register-box form {
+      display: flex;
+      flex-direction: column;
+  }
+  
+  .register-box input {
+      margin-bottom: 15px;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      font-size: 16px;
+  }
+  
+  .register-box button {
+      padding: 10px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+  }
+  
+  .register-box button:hover {
+      background-color: #0056b3;
+  }
+  
+  </style>
+  <script>
+    function validateForm() {
+      const email = document.forms["registerForm"]["email"].value;
+      const password = document.forms["registerForm"]["password"].value;
+      const emailRegex = /^[^\s@]+@gmail\.com$/;
+
+      if (!emailRegex.test(email)) {
+        alert("Email invalide");
+        return false;
+      }
+
+      if (password.length < 8) {
+        alert("Le mot de passe doit contenir au moins 8 caractères");
+        return false;
+      }
+
+      alert("Mot de passe validé");
+      return true;
+    }
+  </script>
+</head>
+<body>
+  <div class="container_reg">
+    <div class="logo">
+    <!--  <img src="./images/imglogo.jpg" class='imglogo' alt='logo' /><h1>TJA</h1>-->
+    </div>
+    <div class="register-box">
+      <h2>Register</h2>
+      <p class="login-link">
+        Have an account? <a href="/">Login</a>
+      </p>
+      <form name="registerForm" action="/register" method="POST" onsubmit="return validateForm()">
+        <input type="text" placeholder="username" required="" name="username"/>
+        <input type="email" placeholder="Email Address" required="" name="email" />
+        <input type="password" placeholder="Password" required="" name="password" />
+        <button type="submit">Register</button>
+      </form>
+    </div>
+  </div>
+</body>
+</html>
