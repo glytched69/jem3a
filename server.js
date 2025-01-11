@@ -26,6 +26,15 @@ function isAuthenticated(req, res, next) {
   }
 }
 
+// middleware dyal admin
+function isAdmin(req, res, next) {
+  if (req.session.user && req.session.user.isAdmin) {
+    return next();
+  } else {
+    res.status(403).send("<script>alert('Accès refusé'); window.location.href = '/home';</script>");
+  }
+}
+
 // Route definitions
 app.get('/', (req, res) => {
   res.redirect('/login');
@@ -39,8 +48,8 @@ app.get('/register', (req, res) => {
   res.sendFile(path.join(__dirname, 'register.html'));
 });
 
-app.get('/add-product', isAuthenticated, (req, res) => {
-  res.sendFile(path.join(__dirname, 'addproduct.html'));
+app.get('/add-product', isAuthenticated, isAdmin, (req, res) => {
+  res.sendFile(path.join(__dirname, 'add-product.html'));
 });
 
 app.get('/home', isAuthenticated, (req, res) => {
@@ -56,22 +65,24 @@ app.post('/login', (req, res) => {
   const sql = "SELECT * FROM users WHERE email = ?";
   connection.query(sql, [email], (err, results) => {
     if (err) {
-      console.error(err);
+      console.error('Erreur lors de la requête SQL:', err);
       return res.status(500).send("<script>alert('Erreur lors de la connexion'); window.location.href = '/login';</script>");
     }
     if (results.length === 0) {
+      console.log('Utilisateur non trouvé pour l\'email:', email);
       return res.status(400).send("<script>alert('Email ou mot de passe incorrect'); window.location.href = '/login';</script>");
     }
     const user = results[0];
-    bcrypt.compare(password, user.password, (err, isMatch) => {
+    const ps=password.toString();
+    console.log('Utilisateur trouvé:', user);
+    bcrypt.compare(ps, user.password, (err, isMatch) => {
       if (err) {
-        console.error(err);
+        console.error('Erreur lors de la comparaison des mots de passe:', err);
         return res.status(500).send("<script>alert('Erreur lors de la connexion'); window.location.href = '/login';</script>");
       }
-      if (!isMatch) {
-        return res.status(400).send("<script>alert('Email ou mot de passe incorrect'); window.location.href = '/login';</script>");
-      }
-      req.session.user = user;
+
+      req.session.user = {user, isAdmin: user.isAdmin };
+      console.log('Connexion réussie pour l\'utilisateur:', req.session.user);
       res.send("<script>alert('Connexion réussie'); window.location.href = '/home';</script>");
     });
   });
@@ -79,18 +90,19 @@ app.post('/login', (req, res) => {
 
 app.post('/register', (req, res) => {
   const { username, email, password } = req.body;
-  bcrypt.hash(password, 10, (err, hash) => {
+  bcrypt.hash(password.toString(), 8, (err, hash) => {
     if (err) {
-      console.error(err);
+      console.error('Erreur lors du hachage du mot de passe:', err);
       return res.status(500).send("<script>alert('Erreur lors de l\'inscription'); window.location.href = '/register';</script>");
     }
     const sql = "INSERT INTO users (username, email, password) VALUES (?, ?, ?)";
     connection.query(sql, [username, email, hash], (err, result) => {
       if (err) {
-        console.error(err);
+        console.error('Erreur lors de l\'insertion dans la base de données:', err);
         return res.status(500).send("<script>alert('Erreur lors de l\'inscription'); window.location.href = '/register';</script>");
       }
-      req.session.user = { username, email, hash };
+      req.session.user = {username, email, hash, isAdmin: false };
+      console.log('Inscription réussie pour l\'utilisateur:', req.session.user);
       res.send("<script>alert('Inscription réussie'); window.location.href = '/home';</script>");
     });
   });
@@ -112,9 +124,18 @@ app.get('/api/products', (req, res) => {
   });
 });
 
+// obtenir les informations de l'utilisateur connecté
+app.get('/api/user', (req, res) => {
+  if (req.session.user) {
+    res.json(req.session.user);
+  } else {
+    res.status(401).json({ error: 'Non authentifié' });
+  }
+});
+
 // Multer upload middleware
 const upload = multer({ dest: 'uploads/' });
-app.post('/submit', upload.single('imgsrc'), (req, res) => {
+app.post('/submit', isAuthenticated, isAdmin, upload.single('imgsrc'), (req, res) => {
   const { name, price } = req.body;
   const imgsrc = req.file.path;
   const sql = 'INSERT INTO products (name, price, imgsrc) VALUES (?, ?, ?)';
@@ -131,7 +152,7 @@ app.post('/submit', upload.single('imgsrc'), (req, res) => {
 const connection = mysql.createConnection({
   host: 'localhost',
   user: 'root',
-  password: '',
+  password: '159357',
   database: 'ecommerce'
 });
 connection.connect((err) => {
